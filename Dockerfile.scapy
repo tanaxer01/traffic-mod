@@ -1,0 +1,11 @@
+from python:3.11-slim
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt-get update -y && apt-get install -y iptables
+RUN pip install scapy 
+COPY basic.py .
+
+RUN iptables -I INPUT -d 192.168.0.0/24 -j NFQUEUE --queue-num 1
+ENTRYPOINT ["python"]
+CMD ["basic.py"]

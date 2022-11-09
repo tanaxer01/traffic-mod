@@ -1,0 +1,31 @@
+FROM ubuntu:20.04 AS builder
+
+WORKDIR /
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV VERSION 2.0.14
+ENV USER taller
+ENV PASS taller
+
+# INSTALACIÓN DE DEPENDENCIAS
+RUN apt-get update -y && \
+    apt-get install -yqq build-essential libssl-dev libcjson1 libcjson-dev uthash-dev curl
+
+# INSTALACIÓN DE LA APP
+RUN curl -L -O https://mosquitto.org/files/source/mosquitto-$VERSION.tar.gz && \
+    tar xzf mosquitto-$VERSION.tar.gz 
+
+RUN cd mosquitto-$VERSION && \
+    make -j $(nproc) WITH_TLS=no WITH_DOCS=no && \
+    make install && \
+    ldconfig && useradd mosquitto
+
+# CONFIGURACIÓN DE LA APP
+COPY mosquitto.conf /etc/mosquitto/
+RUN touch /etc/mosquitto/passwds &&\
+    mosquitto_passwd -b /etc/mosquitto/passwds ${USER} ${PASS}
+
+
+EXPOSE 1883
+
+CMD ["mosquitto", "-v", "-c", "/etc/mosquitto/mosquitto.conf"]
